@@ -2,24 +2,56 @@
 Appendix A: MATLAB codes.
 clear   % CLEARING DATA
 close all
-% REDING DATA
+ 
 data=readtable('datapaper.xlsx','Sheet','Sheet1');
+forcop=readtable('forcop.xlsx','Sheet','Sheet1');
+forexch=readtable('forexch.xlsx','Sheet','Sheet1');
 data1=timetable(data.date, data.exchange);
+
+forexch.Properties.VariableNames = {'Time','Var1'};
+
+if ~istimetable(data1)
+    data1 = table2timetable(data1, 'RowTimes', datetime(data1.date));  % adjust if your date column is named differently
+end
+lastDate = data1.Time(end);
+newDates = (lastDate + days(1)) : days(1) : (lastDate + days(251));
+N = min(height(forexch), numel(newDates));
+forexch = forexch(1:N, :);
+forexch = table2timetable(forexch, 'RowTimes', newDates(1:N)');
+forexch.Time = [];
+forexch.Properties.DimensionNames{1} = 'Time';
+data1 = [data1; forexch];
 data1.retex=zeros(size(data1));
 data1.retex(2:end,:)=(data1.Var1(2:end,:)./data1.Var1(1:end-1,:))-1;
+
+
+
 data2=rmmissing(timetable(data.date1, (data.price).*2204.6));
+forcop.Properties.VariableNames = {'Time','Var1'};
+
+if ~istimetable(data2)
+    data2 = table2timetable(data2, 'RowTimes', datetime(data2.date));  % adjust if your date column is named differently
+end
+lastDate = data2.Time(end);
+newDates = (lastDate + days(1)) : days(1) : (lastDate + days(251));
+N = min(height(forcop), numel(newDates));
+forcop = forcop(1:N, :);
+forcop = table2timetable(forcop, 'RowTimes', newDates(1:N)');
+forcop.Time = [];
+forcop.Properties.DimensionNames{1} = 'Time';
+data2 = [data2; forcop];
 data2.retprice=zeros(size(data2));
 data2.retprice(2:end,:)=(data2.Var1(2:end,:)./data2.Var1(1:end-1,:))-1;
-
+ 
+ 
 data3=rmmissing(synchronize(data1, data2));
 data3.pricerials=data3.Var1_data1.*data3.Var1_data2;
 data3.retpricerials=zeros(size(data3.pricerials));
 data3.retpricerials(2:end,:)=(data3.pricerials(2:end,:)./data3.pricerials(1:end-1,:))-1;
+ 
 
-forcop=readtable('forcop.xlsx','Sheet','Sheet1');
-forexch=readtable('forexch.xlsx','Sheet','Sheet1');
-
-% EXTRACTING DATA
+ 
+ 
 totalmeanex=mean(data1.retex)*252;
 totalstdex=std(data1.retex)*sqrt(252);
 data11=data1(data1.retex<totalmeanex/252,:);
@@ -50,52 +82,88 @@ semistdretpririalsyearly=zeros(row1,2);
 [row1, column1]=size(groupcounts(year(data3.Time)));
 ccretpririalsyearly=zeros(row1,2);
 semiccretpririalsyearly=zeros(row1,2);
-
-
-for i=2013:1:2024
-a=mean(data1(year(data1.Time)==i,'retex').retex)*252;
-%meanretexyearly(i-2012,1)=i;
-%meanretexyearly(i-2012,2)=a;
-b=std(data1(year(data1.Time)==i,'retex').retex)*sqrt(252);
-stdretexyearly(i-2012,1)=i;
-stdretexyearly(i-2012,2)=b;
-data11=data1(data1.retex<a/252,:);
-c=std(data11(year(data11.Time)==i,'retex').retex)*sqrt(252);
-semistdretexyearly(i-2012,1)=i;
-semistdretexyearly(i-2012,2)=c;
-
-aa=mean(data2(year(data2.Time)==i,'retprice').retprice)*252;
-%meanretpriyearly(i-2012,1)=i;
-%meanretpriyearly(i-2012,2)=a;
-bb=std(data2(year(data2.Time)==i,'retprice').retprice)*sqrt(252);
-stdretpriyearly(i-2012,1)=i;
-stdretpriyearly(i-2012,2)=bb;
-data22=data2(data2.retprice<aa/252,:);
-cc=std(data22(year(data22.Time)==i,'retprice').retprice)*sqrt(252);
-semistdretpriyearly(i-2012,1)=i;
-semistdretpriyearly(i-2012,2)=cc;
-
-aaa=mean(data3(year(data3.Time)==i,'retpricerials').retpricerials)*252;
-%meanretpririalsyearly(i-2012,1)=i;
-%meanretpririalsyearly(i-2012,2)=a;
-bbb=std(data3(year(data3.Time)==i,'retpricerials').retpricerials)*sqrt(252);
-stdretpririalsyearly(i-2012,1)=i;
-stdretpririalsyearly(i-2012,2)=bbb;
-data33=data3(data3.retpricerials<aaa/252,:);
-ccc=std(data33(year(data33.Time)==i,'retpricerials').retpricerials)*sqrt(252);
-semistdretpririalsyearly(i-2012,1)=i;
-semistdretpririalsyearly(i-2012,2)=ccc;
-
-bbbb=corr(data3(year(data3.Time)==i,'retex').retex,data3(year(data3.Time)==i,'retprice').retprice);
-ccretpririalsyearly(i-2012,1)=i;
-ccretpririalsyearly(i-2012,2)=bbbb;
-cccc=corr(data1122(year(data1122.Time)==i,'retex').retex,data1122(year(data1122.Time)==i,'retprice').retprice);
-semiccretpririalsyearly(i-2012,1)=i;
-semiccretpririalsyearly(i-2012,2)=cccc;
+ 
+ 
+ 
+data1.retexj=zeros(size(data1.Time));
+data1.retexjj=zeros(size(data1.Time));
+sdf=size(data1.Time);
+for j=1:sdf(1)-1
+      if abs(data1.retex(j+1))>mean(data1.retex)+2*std(data1.retex)
+          data1.retexj(j+1)=1;
+          data1.retexjj(j+1)=abs(data1.retex(j+1))-(mean(data1.retex)+2*std(data1.retex));
+      end
+      
+      
 end
-
-
-
+data1.retexj(data1.retexj==0) = NaN;
+data1.retexjj(data1.retexjj==0) = NaN;
+jumpE=size(rmmissing(data1.retexj))/12;
+jumpE=round(jumpE(1));
+meanjumpE=mean(rmmissing(data1.retexjj));
+stdjumpE=std(rmmissing(data1.retexjj));
+ 
+ 
+data2.retpricej=zeros(size(data2.Time));
+data2.retpricejj=zeros(size(data2.Time));
+sdf1=size(data2.Time);
+for jj=1:sdf1(1)-1
+      if abs(data2.retprice(jj+1))>mean(data2.retprice)+2*std(data2.retprice)
+          data2.retpricej(jj+1)=1;
+          data2.retpricejj(jj+1)=abs(data2.retprice(jj+1))-(mean(data2.retprice)+2*std(data2.retprice));
+      end
+      
+      
+end
+data2.retpricej(data2.retpricej==0) = NaN;
+data2.retpricejj(data2.retpricejj==0) = NaN;
+jumpP=size(rmmissing(data2.retpricej))/12;
+jumpP=round(jumpP(1));
+meanjumpP=mean(rmmissing(data2.retpricejj));
+stdjumpP=std(rmmissing(data2.retpricejj));
+ 
+for i=2013:1:2025
+       a=mean(data1(year(data1.Time)==i,'retex').retex)*252;
+       %meanretexyearly(i-2012,1)=i;
+       %meanretexyearly(i-2012,2)=a;
+       b=std(data1(year(data1.Time)==i,'retex').retex)*sqrt(252);
+       stdretexyearly(i-2012,1)=i;
+       stdretexyearly(i-2012,2)=b;
+       data11=data1(data1.retex<a/252,:);
+       c=std(data11(year(data11.Time)==i,'retex').retex)*sqrt(252);
+       semistdretexyearly(i-2012,1)=i;
+       semistdretexyearly(i-2012,2)=c;
+       
+       aa=mean(data2(year(data2.Time)==i,'retprice').retprice)*252;
+       %meanretpriyearly(i-2012,1)=i;
+       %meanretpriyearly(i-2012,2)=a;
+       bb=std(data2(year(data2.Time)==i,'retprice').retprice)*sqrt(252);
+       stdretpriyearly(i-2012,1)=i;
+       stdretpriyearly(i-2012,2)=bb;
+       data22=data2(data2.retprice<aa/252,:);
+       cc=std(data22(year(data22.Time)==i,'retprice').retprice)*sqrt(252);
+       semistdretpriyearly(i-2012,1)=i;
+       semistdretpriyearly(i-2012,2)=cc;
+       
+       aaa=mean(data3(year(data3.Time)==i,'retpricerials').retpricerials)*252;
+       %meanretpririalsyearly(i-2012,1)=i;
+       %meanretpririalsyearly(i-2012,2)=a;
+       bbb=std(data3(year(data3.Time)==i,'retpricerials').retpricerials)*sqrt(252);
+       stdretpririalsyearly(i-2012,1)=i;
+       stdretpririalsyearly(i-2012,2)=bbb;
+       data33=data3(data3.retpricerials<aaa/252,:);
+       ccc=std(data33(year(data33.Time)==i,'retpricerials').retpricerials)*sqrt(252);
+       semistdretpririalsyearly(i-2012,1)=i;
+       semistdretpririalsyearly(i-2012,2)=ccc;
+       
+       bbbb=corr(data3(year(data3.Time)==i,'retex').retex,data3(year(data3.Time)==i,'retprice').retprice);
+       ccretpririalsyearly(i-2012,1)=i;
+       ccretpririalsyearly(i-2012,2)=bbbb;
+       cccc=corr(data1122(year(data1122.Time)==i,'retex').retex,data1122(year(data1122.Time)==i,'retprice').retprice);
+       semiccretpririalsyearly(i-2012,1)=i;
+       semiccretpririalsyearly(i-2012,2)=cccc;
+ 
+end
 maxstdretexyearly=stdretexyearly(stdretexyearly(:,2)==max(stdretexyearly(:,2)),:);
 minstdretexyearly=stdretexyearly(stdretexyearly(:,2)==min(stdretexyearly(:,2)),:);
 meanstdretexyearly=mean(stdretexyearly(:,2));
@@ -120,9 +188,10 @@ meanccretpririalsyearly=mean(ccretpririalsyearly(:,2));
 maxsemiccretpririalsyearly=semiccretpririalsyearly(semiccretpririalsyearly(:,2)==max(semiccretpririalsyearly(:,2)),:);
 minsemiccretpririalsyearly=semiccretpririalsyearly(semiccretpririalsyearly(:,2)==min(semiccretpririalsyearly(:,2)),:);
 meansemiccretpririalsyearly=mean(semiccretpririalsyearly(:,2));
-
+ 
+ 
 % *** SIMULATION VARIABLES ***
-
+ 
 % START AND END DATE OF PREDICTION PERIOD.
 StartDate = datetime(2024,12,21);
 EndDate = datetime(2025,12,22);
@@ -135,88 +204,116 @@ nPeriods = temp(1)-1;
 % TIME STEP.
 dt = 1/nPeriods;
 % NUMBER OF SIMULATIONS.
-Trials = 10000;  
-
+Trials = 1000;
+ 
+ 
+ 
+ 
+ 
 % *** Equation Variables ***
-
+ 
 Rus = 0.0426;  % INTEREST RATE IN US.
-% SOURCE: www.kroll.com
-Rir = 0.30; % RISK FREE INTEREST RATE IN IRAN.
-% SOURCE: OFFICIAL DATA.
+             % SOURCE: www.kroll.com
+Rir = 0.3208; % RISK FREE INTEREST RATE IN IRAN.
+            % SOURCE: OFFICIAL DATA.
 delta = 0.073; % MEAN CONVINIENCE YIELD ON HOLDING 1 UNIT OF COPPER.
-% CALCULATED FOR US $
-% DELTA = Rus-(1/t)*LN(Pend/P0)
-% [Last 3 Months of Data]
+                     % CALCULATED FOR US $
+                     % DELTA = Rus-(1/t)*LN(Pend/P0)
+                     % [Last 3 Months of Data]
 sigmaP =meansemistdretpriyearly; % VOLATILITY OF RETURNS FOR HOLDING 1 UNIT OF COPPER.
-% STANDARD DIVIATION OF RETURNS.
-% [Last 3 Months of Data]
+                      % STANDARD DIVIATION OF RETURNS.
+                      % [Last 3 Months of Data]
 sigmaE = meansemistdretexyearly; % VOLATILITY OF RETURNS.
-% STANDARD DIVIATION OF RETURNS.
-% [Last 3 Months of Data]
-P0 = data2.Var1(end); % LAST KNOWN PRICE OF COPPER IN THE PERIOD.
-E0 = data1.Var1(end); % LAST KNOWN EXCHANGE RATE. 
-
-
+                 % STANDARD DIVIATION OF RETURNS.
+                 % [Last 3 Months of Data]
+P0 = data2.Var1(end-251); % LAST KNOWN PRICE OF COPPER IN THE PERIOD.
+E0 = data1.Var1(end-251); % LAST KNOWN EXCHANGE RATE. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
 % *** SECTION 01: PRICE ANALYSIS ***
+ 
+ 
 % *** SIMULATION FOR PRICE OF COPPER IN TERMS OF US $ ***
-
-Price = gbm(Rus-delta, sigmaP, 'StartState',P0);
-rng('default')
+ 
+% Price = gbm(Rus-delta, sigmaP, 'StartState',P0);
+% rng('default')
+% [P,Time] = Price.simBySolution(nPeriods, 'DeltaTime', dt,...
+%                 'nTrials', Trials,'Antithetic',false);
+ 
+AssetPrice = P0;
+Return = Rus-delta;
+Sigma = sigmaP;
+JumpMean = 0;
+JumpVol = 0;
+JumpFreq = 0;
+            
+Price= merton(Return,Sigma,JumpFreq,JumpMean,JumpVol,...
+                'startstat',AssetPrice);
+ 
 [P,Time] = Price.simBySolution(nPeriods, 'DeltaTime', dt,...
-'nTrials', Trials,'Antithetic',false);
-
-
-
-
-
+                'nTrials', Trials,'Antithetic',false);            
+KP=exp(JumpMean+(0.5*JumpVol^2))-1;
+KPIN=exp(2*JumpMean+(JumpVol^2))*(exp(JumpVol^2)-1);
+varqp=JumpFreq*(KPIN+KP^2);
+            
 % *** PUTTING THE SIMULATION PATH IN MATRIX PriceForecast,
 % FOR BETTER DATA HANDLING ***
-
+ 
 PriceForecast = zeros(nPeriods+1,Trials);
 for i = 1:Trials
-PriceForecast(:,i)=P(:,1,i);
+    PriceForecast(:,i)=P(:,1,i);
 end
-
+ 
+ 
 % *** PROCESSING FOR MAX, MIN, and MEAN PATHS. ***
-
+ 
 MaximumPricePath = zeros(nPeriods+1,1);
 MinimumPricePath = zeros(nPeriods+1,1);
 MeanPricePath = zeros(nPeriods+1,1);
 for d = 1:252
-MaximumPricePath(d,1) = max(PriceForecast(d,:));
-MinimumPricePath(d,1) = min(PriceForecast(d,:));
-MeanPricePath(d,1) = mean(PriceForecast(d,:));
+    MaximumPricePath(d,1) = max(PriceForecast(d,:));
+    MinimumPricePath(d,1) = min(PriceForecast(d,:));
+    MeanPricePath(d,1) = mean(PriceForecast(d,:));
 end
-
-
+ 
+ 
+ 
 % *** ADDING MAX,MIN,MEAN PATH TO PriceForecast DATA ***
-
+ 
 PriceForecast(:,Trials+1) = MaximumPricePath();
 PriceForecast(:,Trials+2) = MinimumPricePath();
 PriceForecast(:,Trials+3) = MeanPricePath();
-
+ 
+ 
+ 
 % *** WRITING THE DATA TO FILE 'PriceForecast.xlsx'. ***
-
+ 
 filename = 'PriceForecast.xlsx';   
 xlswrite(filename,PriceForecast);
-
-
+ 
+ 
+ 
 % *** CALCULATING VOLATILITY OF PRICE FOR MAX,MIN,MEAN PATH ***
-
+ 
 returnMax = zeros(nPeriods,1);
 returnMin = zeros(nPeriods,1);
 returnMean = zeros(nPeriods,1);
 for i = 1:nPeriods
-returnMax(i) = (MaximumPricePath(i+1)-MaximumPricePath(i))/MaximumPricePath(i);
-returnMin(i) = (MinimumPricePath(i+1)-MinimumPricePath(i))/MinimumPricePath(i);
-returnMean(i) = (MeanPricePath(i+1)-MeanPricePath(i))/MeanPricePath(i);
+    returnMax(i) = (MaximumPricePath(i+1)-MaximumPricePath(i))/MaximumPricePath(i);
+    returnMin(i) = (MinimumPricePath(i+1)-MinimumPricePath(i))/MinimumPricePath(i);
+    returnMean(i) = (MeanPricePath(i+1)-MeanPricePath(i))/MeanPricePath(i);
 end;
 volatilityMax = std(returnMax);
 volatilityMin = std(returnMin);
 volatilityMean = std(returnMean);
-
+ 
 % PLOTTING PATHS.
-
+ 
 figure(1) % PLOTTING exchange.
 namef1 = {};
 namef1{1} = 'The Exchange';
@@ -228,9 +325,9 @@ ylabel('Exchange Rate (Rials)');
 legend(namef1,'Location', 'Best');
 grid on;
 grid minor;
-
+ 
 % PLOTTING PATHS.
-
+ 
 figure(2) % PLOTTING exchange.
 namef1 = {};
 namef1{1} = 'The Copper Price';
@@ -242,10 +339,12 @@ ylabel('Copper Price ($/ton)');
 legend(namef1,'Location', 'Best');
 grid on;
 grid minor;
-
-
+ 
+ 
+ 
+ 
 % PLOTTING SIMULATION PATHS.
-
+ 
 figure(3) % PLOTTING MAX,MIN,MEAN PATHS.
 namef1 = {};
 plot(BusinessDays,MaximumPricePath);
@@ -255,7 +354,7 @@ plot(BusinessDays,MinimumPricePath);
 namef1{2} = 'The Worst Senario';
 plot(BusinessDays,MeanPricePath);
 namef1{3} = 'The Mean Senario';
-title('Forecasting of Copper Price');
+title('Simulation of Copper Price');
 xlabel('Date'); 
 ylabel('Copper Price($/ton)');
 legend(namef1,'Location', 'Best');
@@ -263,16 +362,17 @@ domain = max(MaximumPricePath) - min(MinimumPricePath);
 ylim([min(MinimumPricePath)-domain/4, max(MaximumPricePath)+domain/4]);
 grid on;
 grid minor;
-
+ 
+ 
 figure(4) % PLOTTING 5 RANDOM PATHS.
 namef2 = {};
-for i = 1:5
-j = randsample(Trials,1);
-plot(BusinessDays,PriceForecast(:,j));
-namef2{end+1} = ['Simulation-' num2str(j)];
-hold on;
+for i = 1:1000
+    j = randsample(Trials,1);
+    plot(BusinessDays,PriceForecast(:,j));
+    namef2{end+1} = ['Simulation-' num2str(j)];
+    hold on;
 end
-title('Forecasting of Copper Price');
+title('Simulation of Copper Price');
 xlabel('Date'); 
 ylabel('Copper Price($/ton)'); 
 domain = max(MaximumPricePath) - min(MinimumPricePath);
@@ -280,57 +380,82 @@ ylim([min(MinimumPricePath)-domain/4, max(MaximumPricePath)+domain/4]);
 grid on;
 grid minor;
 hold on;
-
+ 
+ 
 disp('<<< End of Price Analysis Simulation >>>')
-
-
+ 
+ 
+ 
+ 
+ 
 % *** SECTION 02: EXCHANGE RATE ANALYSIS ***
-
+ 
 % *** SIMULATION FOR EXCHANGE RATE FOR US $ AND IRANIAN RIAL ***
-ExchangeRate = gbm(Rir-Rus, sigmaE, 'StartState',E0);
-rng('default')
+% ExchangeRate = gbm(Rir-Rus, sigmaE, 'StartState',E0);
+% rng('default')
+% [E,Time] = ExchangeRate.simBySolution(nPeriods, 'DeltaTime', dt,...
+%                 'nTrials', Trials,'Antithetic',false);
+            
+ 
+AssetPrice1 = E0;
+Return1 =Rir-Rus;
+Sigma1 = sigmaE;
+JumpMean1 = 0;
+JumpVol1 = 0;
+JumpFreq1 = 0;
+            
+ExchangeRate= merton(Return1,Sigma1,JumpFreq1,JumpMean1,JumpVol1,...
+                'startstat',AssetPrice1);
+ 
 [E,Time] = ExchangeRate.simBySolution(nPeriods, 'DeltaTime', dt,...
-'nTrials', Trials,'Antithetic',false);
-
-
-
+                'nTrials', Trials,'Antithetic',false);              
+            
+KE=exp(JumpMean1+(0.5*JumpVol1^2))-1;
+KEIN=exp(2*JumpMean1+(JumpVol1^2))*(exp(JumpVol1^2)-1);
+varqe=JumpFreq1*(KEIN+KE^2);            
 % *** PUTTING THE SIMULATION PATH IN MATRIX ExchForecast,
 % FOR BETTER DATA HANDLING ***
-
+ 
 ExchForecast = zeros(nPeriods+1,Trials);
 for i = 1:Trials
-ExchForecast(:,i)=E(:,1,i);
+    ExchForecast(:,i)=E(:,1,i);
 end
-
-
+ 
+ 
+ 
+ 
 % *** PROCESSING FOR MAX, MIN, and MEAN PATHS. ***
-
+ 
 MaximumExchPath = zeros(nPeriods+1,1);
 MinimumExchPath = zeros(nPeriods+1,1);
 MeanExchPath = zeros(nPeriods+1,1);
 for d = 1:252
-MaximumExchPath(d,1) = max(ExchForecast(d,:));
-MinimumExchPath(d,1) = min(ExchForecast(d,:));
-MeanExchPath(d,1) = mean(ExchForecast(d,:));
+    MaximumExchPath(d,1) = max(ExchForecast(d,:));
+    MinimumExchPath(d,1) = min(ExchForecast(d,:));
+    MeanExchPath(d,1) = mean(ExchForecast(d,:));
 end
-
-
+ 
+ 
+ 
+ 
 % *** ADDING MAX,MIN,MEAN PATH TO PriceForecast DATA ***
-
+ 
 ExchForecast(:,Trials+1) = MaximumExchPath();
 ExchForecast(:,Trials+2) = MinimumExchPath();
 ExchForecast(:,Trials+3) = MeanExchPath();
-
-
+ 
+ 
+ 
 % *** WRITING THE DATA TO FILE 'ExchForecast.xlsx'. ***
+ 
 filename = 'ExchForecast.xlsx';   
 xlswrite(filename,ExchForecast);
-
-
-
-
+ 
+ 
+ 
+ 
 % PLOTTING SIMULATION PATHS.
-
+ 
 figure(5) % PLOTTING MAX,MIN,MEAN PATHS.
 namef1 = {};
 plot(BusinessDays,MaximumExchPath);
@@ -340,7 +465,7 @@ plot(BusinessDays,MinimumExchPath);
 namef1{2} = 'The Worst Senario';
 plot(BusinessDays,MeanExchPath);
 namef1{3} = 'The Mean Senario';
-title('Forecasting of Exchange Path');
+title('Simulation of Exchange Path');
 xlabel('Date'); 
 ylabel('Exchange Rate (Rials)');
 legend(namef1,'Location', 'Best');
@@ -348,17 +473,17 @@ domain = max(MaximumExchPath) - min(MinimumExchPath);
 ylim([min(MinimumExchPath)-domain/4, max(MaximumExchPath)+domain/4]);
 grid on;
 grid minor;
-
-
+ 
+ 
 figure(6) % PLOTTING 5 RANDOM PATHS.
 namef2 = {};
-for i = 1:5
-j = randsample(Trials,1);
-plot(BusinessDays,ExchForecast(:,j));
-namef2{end+1} = ['Simulation-' num2str(j)];
-hold on;
+for i = 1:1000
+    j = randsample(Trials,1);
+    plot(BusinessDays,ExchForecast(:,j));
+    namef2{end+1} = ['Simulation-' num2str(j)];
+    hold on;
 end;
-title('Forecasting of Exchange Rate');
+title('Simulation of Exchange Rate');
 xlabel('Date'); 
 ylabel('Exchange Rate (Rials)'); 
 domain = max(MaximumExchPath) - min(MinimumExchPath);
@@ -366,18 +491,27 @@ ylim([min(MinimumExchPath)-domain/4, max(MaximumExchPath)+domain/4]);
 grid on;
 grid minor;
 hold on;
-
+ 
+ 
+ 
+ 
 disp('<<< End of Exchange Rate Simulation >>>')
-
-
-% *** SECTION 03: PREDICTION OF PROJECT VALUE USING FDM ***  
-
+ 
+ 
+ 
+ 
+ 
+ 
+% *** SECTION 03: PREDICTION OF PROJECT VALUE USING FDM *** 
+ 
+ 
+ 
 % *** PROBLEM VARIABLES ***
-Q = 1200000000;   % TOTAL AMOUNT OF RESERVES (ASSUMPTION)
-T = 20;           % NUMBER OF YEARS FOR EXTRACTION (ASSUMPTION)
+Q = 1200000000*0.007*0.85;   % TOTAL AMOUNT OF RESERVES (ASSUMPTION)
+T = 24;           % NUMBER OF YEARS FOR EXTRACTION (ASSUMPTION)
 q = Q/T;         % EXTRACTION PER YEAR.
 ccPE = totalcorrcoefprex; % CALCULATED CORRELATION COEFICIENT
-% [Last 3 Months of Data]
+                 % [Last 3 Months of Data]
 %Pir = PriceForecast.*ExchForecast; % COPPER PRICE IN TERMS OF IRANIAN RIAL.
 %Pir = data3.pricerials;
 P=9044;
@@ -385,58 +519,287 @@ E=763000;
 Pir = P*E;
 % VOLATILITY OF RETURNS FOR HOLDING 1 UNIT OF COPPER 
 % IN TERMS OF IRANIAN RIAL.
-sigmaPir = sqrt(sigmaP^2+sigmaE^2+2*ccPE*sigmaP*sigmaE); 
+%sigmaPir = sqrt(sigmaP^2+sigmaE^2+2*ccPE*sigmaP*sigmaE+varqp+varqe); 
 landaC = 0.0986; % COUNTRY RISK PREMIUM. 
-R = 0; % ROYALTY TAX IN IRAN. 
-Cprime = 2500*E; % TOTAL COST FOR EXTRACTION OF 1 UNIT OF COPPER (RIAL)
-G = 0; % CORPORATE TAX IN IRAN. 
-
-
+R = 0.12; % ROYALTY TAX IN IRAN. 
+Cprime = 1875*E; % TOTAL COST FOR EXTRACTION OF 1 UNIT OF COPPER (RIAL)
+Cfixed=625*E;
+G = 0.25; % CORPORATE TAX IN IRAN. 
+sigmaPir = sqrt(sigmaP^2+sigmaE^2+2*ccPE*sigmaP*sigmaE+varqp+varqe); 
+ 
 % *** SIMULATION VARIABLES ***
+ 
+%% --- GRID PARAMETERS ---
+N = 500;           % Price mesh
+J = 200;           % Reserve mesh (increase for accuracy)
+Q_data = linspace(0,Q,J+1);
+Pir_max = Pir + 0.2*(Pir - Cprime);  % k≈0.1 تا 0.2
+Pir_data = linspace(0, Pir_max, N+1);
+%Pir_data = linspace(0,1.3325*Pir,N+1); % Price grid (extend a bit above current)
+dPir = Pir_data(2)-Pir_data(1);
+dQ = Q/J;
 
-N = 50;   % MESHING SIZE FOR PRICE. 
-J = 5000;   % MESHING SIZE FOR RESERVES.
-Q_data = linspace(Q,0,J+1); % RESERVE DATA SEQUENCE.
-Pir_data = linspace(0,max(max(Pir)),N+1); % PRICE DATA SEQUENCE
-dPir = max(max(Pir))/N; % STEP SIZE FOR Pir
-dQ = Q/J;          % STEP SIZE FOR Q.
-V = zeros(N+1,J+1); % PROJECT VALUE MATRIX. 
-%V(1:N,1)=0;
+V = zeros(N+1,J+1); % Project value matrix                % PROJECT VALUE MATRIX
+Rir=0.04;
+% % % EXPLICIT FDM WITH BOUNDARY CONDITIONS
+% for j = 1:J
+%     % Boundary condition: Q=0 (mine exhausted)
+%     V(:,1) = 0;
+% 
+%     for n = 2:N
+%         % Explicit FDM update for interior nodes
+%         V(n,j+1) = ((0.5*sigmaPir^2*n^2*dQ/q) - ...
+%                      (n*(Rir-delta+ccPE*sigmaP*sigmaE)*dQ/(2*q)))*V(n-1,j) + ...
+%                     (1 - (sigmaPir^2*n^2*dQ/q) - ((Rir+landaC)*dQ/q))*V(n,j) + ...
+%                     ((0.5*sigmaPir^2*n^2*dQ/q) + ...
+%                      (n*(Rir-delta+ccPE*sigmaP*sigmaE)*dQ/(2*q)))*V(n+1,j) + ...
+%                     (n*dPir*(1-R) - Cprime)*(1-G)*dQ;
+%     end
+% 
+%     % Boundary condition at P_IR = 0 (linear approximation)
+%     V(1,j+1) = V(2,j+1);
+% 
+%     % Boundary condition at P_IR = max (linear approximation)
+%     V(N+1,j+1) = V(N,j+1);
+% end
 
-% EXPLICIT FDM
+
+% ---------------------------
+% FULLY IMPLICIT FDM (Backward Euler)
+% ---------------------------
+
+% nPoints = N+1;
+% a = zeros(nPoints,1); b = zeros(nPoints,1); c = zeros(nPoints,1);
+% RHS = zeros(nPoints,1);
+% 
+% % compute sigmaPir once (or re-compute if you change sigmaP/sigmaE earlier)
+% sigmaPir = sqrt(sigmaP^2 + sigmaE^2 + 2*ccPE*sigmaP*sigmaE + varqp + varqe);
+% fprintf('Using sigmaPir = %.6f\n', sigmaPir);
+% 
+% for j = 1:J
+%     % --- enforce exhausted boundary for current column j (Q=0 at col 1)
+%     V(:,1) = 0;
+% 
+%     % zero arrays to avoid stale values from previous iteration
+%     a(:) = 0; b(:) = 0; c(:) = 0; RHS(:) = 0;
+% 
+%     for n = 2:N
+%         alpha = 0.5 * sigmaPir^2 * n^2;
+%         beta  = n * (Rir - delta + ccPE*sigmaP*sigmaE);
+% 
+%         % implicit matrix coefficients (Backward Euler)
+%         a(n) = -(dQ/q) * ( alpha / dPir^2 - beta / (2*dPir) );     
+%         b(n) = 1 + (dQ/q) * ( 2*alpha / dPir^2 + (Rir + landaC) ); 
+%         c(n) = -(dQ/q) * ( alpha / dPir^2 + beta / (2*dPir) );     
+% 
+%         % source term per step: cash flow * time-step (dQ corresponds to extracted mass)
+%         P_now = Pir_data(n);
+%         S_n = (P_now*(1-R) - Cprime) * (1-G) * dQ;  
+% 
+%         RHS(n) = V(n,j) + S_n;
+%     end
+% 
+%     % Price-axis boundaries (linear approx -> second derivative = 0)
+%     b(1) = 1; c(1) = -1; a(1) = 0; RHS(1) = 0;
+%     idx = nPoints;
+%     b(idx) = 1; a(idx) = -1; c(idx) = 0; RHS(idx) = 0;
+% 
+%     % Solve A * V(:,j+1) = RHS
+%     V(:, j+1) = thomas_solver(a,b,c,RHS);
+% 
+%     % Re-apply physical boundaries after solve
+%     V(:,1) = 0;               % Q=0 -> exhausted
+%     V(1, :) = 0;              % P=0 -> worthless (all columns)
+%     V(end, :) = V(end-1, :);  % linear at high price (all columns)
+% 
+%     % optional diagnostic print every 100 steps
+%     if mod(j,1000)==0
+%         fprintf('step %d/%d: V range [%g, %g]\n', j, J, min(V(:)), max(V(:)));
+%     end
+% end
+
+
+%% --- CRANK-NICOLSON LOOP ---
+nPoints = N+1;
+aA=zeros(nPoints,1); bA=zeros(nPoints,1); cA=zeros(nPoints,1);
+aB=zeros(nPoints,1); bB=zeros(nPoints,1); cB=zeros(nPoints,1);
+RHS=zeros(nPoints,1);
+
+dt = dQ/q; % scale for each Q-step
+
 for j = 1:J
-V(1,j)=0;
-for n = 2:N
+    V(:,1) = 0; % Q=0 boundary
 
+    % Zero arrays
+    aA(:)=0; bA(:)=0; cA(:)=0; aB(:)=0; bB(:)=0; cB(:)=0; RHS(:)=0;
 
-V(n,j+1)= ((0.5*sigmaPir^2*n^2*dQ/q)-...
-(n*(Rir-delta+ccPE*sigmaE*sigmaP)*dQ/(2*q)))*V(n-1,j)+ ...
-(1-(sigmaPir^2*n^2*dQ/q)-((Rir+landaC)*dQ/q))*V(n,j)+...
-((0.5*sigmaPir^2*n^2*dQ/q)+...
-(n*(Rir-delta+ccPE*sigmaE*sigmaP)*dQ/(2*q)))*V(n+1,j)+...
-(n*dPir(1-R)-Cprime)*(1-G)*dQ;
-V(n,J+1)=0;
+    for n = 2:N
+        P_now = Pir_data(n);
 
+        % PDE coefficients
+        alpha = 0.5 * sigmaPir^2 * P_now^2;
+        beta  = (Rir - delta + ccPE*sigmaP*sigmaE) * P_now;
+
+        % CN matrices
+        aA(n) = -(dt/2) * ( alpha/dPir^2 - beta/(2*dPir) );
+        bA(n) = 1 + (dt/2) * ( 2*alpha/dPir^2 + (Rir+landaC) );
+        cA(n) = -(dt/2) * ( alpha/dPir^2 + beta/(2*dPir) );
+
+        aB(n) =  (dt/2) * ( alpha/dPir^2 - beta/(2*dPir) );
+        bB(n) =  1 - (dt/2) * ( 2*alpha/dPir^2 + (Rir+landaC) );
+        cB(n) =  (dt/2) * ( alpha/dPir^2 + beta/(2*dPir) );
+
+        % Cashflow for this step (scaled by dQ/q)
+        CF_year = (P_now*(1-R) - Cprime)*(1-G)*q-Cfixed;
+        discount_factor = (1 + Rir)^(-dt);
+        S_n = CF_year * dt*discount_factor;
+
+        % RHS
+        RHS(n) = aB(n)*V(n-1,j) + bB(n)*V(n,j) + cB(n)*V(n+1,j) + S_n;
+    end
+
+    % Boundary conditions (economic)
+    bA(1)=1; cA(1)=-1; RHS(1)=0;         % P=0 worthless
+    bA(end)=1; aA(end)=-1; RHS(end)=0;    % dV/dP=0 at high price
+
+    % Solve
+    V(:,j+1) = thomas_solver(aA,bA,cA,RHS);
+
+    % Reapply boundaries
+    V(1,:) = 0;
+    V(end,:) = V(end-1,:);
 end
-end
 
-% PLOTING V(Pir,Q)
-figure(7)
-cla
-surf(Q_data,Pir_data,V,gradient(V),'LineStyle','none')
-xlabel('Q') 
-ylabel('P')
-zlabel('V') 
-colorbar
+%% --- RESULTS ---
+% Pick price closest to current Pir
+n0 = round(Pir/dPir)+1;
+V0 = V(n0,end);
 
+fprintf('\nProject value ≈ %.3e Rials\n', V0);
+
+% NPV check
+CF_per_year = ((Pir*(1-R) - Cprime)*(1-G)*q)-Cfixed;
+NPV_DCF = sum(CF_per_year ./ (1+Rir).^(1:T));
+fprintf('NPV (DCF) = %.3e\n', NPV_DCF);
+fprintf('Vmax (PDE) = %.3e\n', max(V(:)));
+
+
+
+
+
+
+
+
+
+
+
+
+
+ 
+% % PLOTING V(Pir,Q)
+% figure(7)
+% cla
+% surf(log(Q_data),log(Pir_data),V,gradient(V),'LineStyle','none')
+% xlabel('Q') 
+% ylabel('P')
+% zlabel('V') 
+% colorbar
+
+
+
+
+
+% PLOT: Mine Value Surface V(P_IR, Q)
+figure(7); clf;
+
+% Convert matrices to meshgrid for clarity
+[PIR_mesh, Q_mesh] = meshgrid(Pir_data, Q_data);
+
+% Main surface plot
+surf(PIR_mesh, Q_mesh, V', ...
+    'FaceColor', 'interp', ...
+    'EdgeColor', 'none', ...
+    'FaceLighting', 'gouraud');
+
+colormap turbo;          % vivid color scale
+colorbar;
+hold on;
+
+% Add contour projection for better readability
+contour3(PIR_mesh, Q_mesh, V', 20, 'k', 'LineWidth', 0.7);
+
+% Axis labels & title
+xlabel('Copper Price, P_{IR} (Rials)', 'FontSize', 12, 'FontWeight', 'bold');
+ylabel('Remaining Reserves, Q', 'FontSize', 12, 'FontWeight', 'bold');
+zlabel('Mine Value, V(P_{IR},Q)', 'FontSize', 12, 'FontWeight', 'bold');
+title('Mine Valuation Surface under Jump-Diffusion and Exchange Rate Uncertainty', ...
+      'FontSize', 13, 'FontWeight', 'bold');
+
+% Improve view and shading
+view(45,30);
+grid on; box on;
+shading interp;
+
+% Add lighting and material for realism
+camlight headlight;
+material([0.5 0.4 0.3]);
+
+% OPTIONAL: add 2D contour plot for top view
+figure(8); clf;
+contourf(PIR_mesh, Q_mesh, V', 30, 'LineColor', 'none');
+colormap turbo;
+colorbar;
+xlabel('Copper Price, P_{IR} (Rials)', 'FontSize', 12, 'FontWeight', 'bold');
+ylabel('Remaining Reserves, Q', 'FontSize', 12, 'FontWeight', 'bold');
+title('Contour Map of Mine Value V(P_{IR}, Q)', 'FontSize', 13, 'FontWeight', 'bold');
+
+ 
 filename = 'Exch.xlsx';   
 writetimetable(data1,filename);
 filename = 'copper.xlsx';   
 writetimetable(data2,filename);
 filename = 'combin.xlsx';   
 writetimetable(data3,filename);
+ 
+[~, n0] = min(abs(Pir_data - Pir));
+Vmax = V(n0, end);
 
-max(max(V))
+
+% % Thomas solver (unchanged)
+% function x = thomas_solver(a,b,c,d)
+%     n = length(b);
+%     cp = zeros(n,1); dp = zeros(n,1); x=zeros(n,1);
+%     denom = b(1);
+%     if abs(denom) < eps, error('Zero pivot row1'); end
+%     cp(1) = c(1)/denom; dp(1) = d(1)/denom;
+%     for i = 2:n
+%         denom = b(i) - a(i)*cp(i-1);
+%         if abs(denom) < eps, error('Zero pivot row %d',i); end
+%         cp(i) = c(i)/denom;
+%         dp(i) = (d(i) - a(i)*dp(i-1))/denom;
+%     end
+%     x(n) = dp(n);
+%     for i=n-1:-1:1
+%         x(i) = dp(i) - cp(i)*x(i+1);
+%     end
+% end
+
+% ---------------------------
+% Thomas solver (tridiagonal)
+% ---------------------------
+%% --- THOMAS SOLVER ---
+function x = thomas_solver(a,b,c,d)
+    n = length(b); cp=zeros(n,1); dp=zeros(n,1); x=zeros(n,1);
+    cp(1) = c(1)/b(1); dp(1) = d(1)/b(1);
+    for i=2:n
+        denom = b(i)-a(i)*cp(i-1);
+        cp(i)=c(i)/denom; dp(i)=(d(i)-a(i)*dp(i-1))/denom;
+    end
+    x(n)=dp(n);
+    for i=n-1:-1:1
+        x(i)=dp(i)-cp(i)*x(i+1);
+    end
+end
 
 
 
